@@ -87,6 +87,7 @@ def send_watchlist_messages(
     bot_token: str,
     chat_id: str,
     messages: Iterable[str],
+    parse_mode: str | None = None,
     logger: logging.Logger | None = None,
 ) -> int:
     """Send one or more watchlist messages and return sent count."""
@@ -97,7 +98,7 @@ def send_watchlist_messages(
                 bot_token=bot_token,
                 chat_id=chat_id,
                 text=chunk,
-                parse_mode=None,
+                parse_mode=parse_mode,
             )
             sent += 1
             if logger:

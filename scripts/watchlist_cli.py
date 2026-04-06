@@ -7,7 +7,8 @@ import json
 import logging
 import os
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
+from html import escape
 from pathlib import Path
 from typing import Any
 
@@ -365,22 +366,39 @@ def _build_output(
 
 
 def format_telegram_summary(payload: dict[str, Any]) -> str:
+    now = datetime.now(UTC)
+    today = now.date()
+    days_until_next_monday = (7 - today.weekday()) % 7
+    if days_until_next_monday == 0:
+        days_until_next_monday = 7
+    next_monday = today + timedelta(days=days_until_next_monday)
+
     top_sectors = ", ".join(payload.get("top_sectors", [])[:3]) or "N/A"
     rows = payload.get("watchlist", [])
+
     lines = [
-        f"WATCHLIST HEBDO - {datetime.now(UTC).strftime('%Y-%m-%d')} UTC",
-        f"Regime: {payload.get('regime', 'UNKNOWN')}",
-        f"Top secteurs: {top_sectors}",
+        (
+            f"<b>Watchlist pour la semaine du "
+            f"{next_monday.strftime('%d/%m/%Y')}</b>"
+        ),
+        f"Generee le {now.strftime('%Y-%m-%d %H:%M')} UTC",
+        f"Regime: <b>{escape(payload.get('regime', 'UNKNOWN'))}</b>",
+        f"Top secteurs: {escape(top_sectors)}",
         "",
-        f"Top {len(rows)} tickers:",
+        f"<b>Top {len(rows)} tickers</b>",
     ]
 
     for idx, row in enumerate(rows, start=1):
+        ticker = str(row.get("ticker", "-")).upper()
+        ticker_link = (
+            f"<a href=\"https://finviz.com/quote.ashx?t={escape(ticker)}\">"
+            f"{escape(ticker)}</a>"
+        )
+
         lines.append(
-            f"{idx}. {row.get('ticker', '-'):<6} "
-            f"conv={row.get('conviction', 0)} "
-            f"wk={row.get('performance_week', '-')} "
-            f"earnings={row.get('earnings_flag', 'UNKNOWN')}"
+            f"{idx}. {ticker_link} | conv={row.get('conviction', 0)} | "
+            f"wk={escape(str(row.get('performance_week', '-')))} | "
+            f"earnings={escape(str(row.get('earnings_flag', 'UNKNOWN')))}"
         )
 
     lines.append("")
@@ -456,6 +474,7 @@ def run(args: argparse.Namespace) -> int:
                 bot_token=bot_token,
                 chat_id=chat_id,
                 messages=[summary],
+                parse_mode="HTML",
                 logger=LOG,
             )
             LOG.info("telegram_sent_count=%d", sent_count)
