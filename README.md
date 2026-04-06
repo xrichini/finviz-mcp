@@ -1,103 +1,225 @@
 # finviz-mcp
 
-MCP Server exposing **finvizfinance** as tools for Claude Desktop.
-Conçu pour s'intégrer avec `trading-skills` dans des workflows de watchlist automatisés.
+MCP Server exposing **finvizfinance** as tools for Claude Desktop and GitHub Actions. 
 
-## Outils disponibles
+Insider trading data, market sentiment, sector performance, and technical screening — all accessible via MCP tools.
 
-### 📊 Group / Sector
-| Tool | Description |
-|------|-------------|
-| `finviz_get_sector_performance` | Performance des secteurs US, triée par période |
-| `finviz_get_industry_performance` | Performance des industries (par secteur optionnel) |
-| `finviz_get_group_overview` | Vue fondamentale d'un groupe (Market Cap, P/E, EPS...) |
+## Quick Start
 
-### 🔍 Screener
-| Tool | Description |
-|------|-------------|
-| `finviz_screen_new_highs` | Tickers au 52-week new high (breakout) |
-| `finviz_screen_bullish_technicals` | Setup bullish (SMA50/200, RSI, performance) |
-| `finviz_screen_by_signal` | Screener par signal Finviz (pattern, news, insider) |
-| `finviz_screen_technical` | Données techniques (RSI, Beta, ATR, volatilité) |
-| `finviz_screen_performance` | Classement performance (momentum ranking) |
-| `finviz_screen_optionable_bullish` | Candidats optionables bullish (PMCC, spreads) |
+### Claude Desktop (uvx from GitHub)
 
-### 📋 Quote (par ticker)
-| Tool | Description |
-|------|-------------|
-| `finviz_get_ticker_fundamentals` | Tous les fondamentaux d'un ticker |
-| `finviz_get_ticker_news` | Dernières news (avec liens) |
-| `finviz_get_ticker_insider` | Transactions insiders récentes |
-| `finviz_get_ticker_ratings` | Historique ratings analystes |
-| `finviz_get_ticker_peers` | Tickers peers (même secteur/industrie) |
-| `finviz_get_ticker_full_info` | Tout en un seul appel |
-| `finviz_get_ticker_description` | Description de la société |
+Add to your `claude_desktop_config.json`:
 
-### 🏦 Insider (marché entier)
-| Tool | Description |
-|------|-------------|
-| `finviz_get_market_insiders` | Achats/ventes insiders récents (marché entier) |
-| `finviz_get_insider_by_owner` | Transactions d'un insider spécifique |
-
----
-
-## Installation
-
-### 1. Créer l'environnement virtuel
-
-```bash
-cd "D:\XAVIER\DEV\Python Projects\finviz-mcp"
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-> **Note :** `finvizfinance` est installé depuis PyPI.
-> Si tu veux utiliser ta version locale (avec tes éventuelles modifs), remplace dans `requirements.txt` :
-> ```
-> finvizfinance>=0.14.0
-> ```
-> par :
-> ```
-> -e ../finvizfinance
-> ```
-
-### 2. Test local (optionnel)
-
-```bash
-mcp dev server.py
-```
-
-### 3. Configurer Claude Desktop
-
-Édite `%APPDATA%\Claude\claude_desktop_config.json` :
-
+**Windows:**
 ```json
 {
   "mcpServers": {
-    "finviz": {
-      "command": "D:\\XAVIER\\DEV\\Python Projects\\finviz-mcp\\.venv\\Scripts\\python.exe",
-      "args": [
-        "D:\\XAVIER\\DEV\\Python Projects\\finviz-mcp\\server.py"
-      ]
+    "finviz-mcp": {
+      "command": "cmd",
+      "args": ["/c", "uvx", "--from", "git+https://github.com/xrichini/finviz-mcp.git", "finviz-mcp"]
     }
   }
 }
 ```
 
-Redémarre Claude Desktop — les outils `finviz_*` apparaissent dans la liste.
+**macOS/Linux:**
+```json
+{
+  "mcpServers": {
+    "finviz-mcp": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/xrichini/finviz-mcp.git", "finviz-mcp"]
+    }
+  }
+}
+```
+
+Restart Claude Desktop. Tools like `finviz_get_market_insiders()` are now available.
+
+### Local Development
+
+```bash
+git clone https://github.com/xrichini/finviz-mcp.git
+cd finviz-mcp
+uv sync
+uv run python server.py
+```
+
+Test in Claude Desktop with local path or run tests:
+```bash
+uv run pytest tests/ -v
+```
+
+## Available Tools
+
+### 🏦 Insider Trading
+
+| Tool | Description |
+|------|-------------|
+| `finviz_get_market_insiders(option, limit)` | Latest insider buys/sells (market-wide). Options: "latest buys", "latest sales", "top week", "top owner", etc. |
+| `finviz_get_insider_by_owner(insider_id, limit)` | All transactions for a specific insider. |
+
+### 📊 Sector & Group
+
+| Tool | Description |
+|------|-------------|
+| `finviz_get_sector_performance(period, top_n)` | US sector rankings (Day, Week, Month, Quarter, Year). |
+| `finviz_get_industry_performance(sector, period)` | Industries within a sector or market-wide. |
+| `finviz_get_group_overview(ticker, group_type)` | Fundamental metrics for a stock group. |
+
+### 🔍 Screener
+
+| Tool | Description |
+|------|-------------|
+| `finviz_screen_new_highs(sector, min_market_cap, limit)` | 52-week new highs (breakout candidates). |
+| `finviz_screen_bullish_technicals(sector, limit)` | Bullish setup (SMA50/200, RSI, performance). |
+| `finviz_screen_by_signal(signal, limit)` | Screen by Finviz signals (insider, news, pattern). |
+| `finviz_screen_technical(sector, limit)` | Technical metrics (RSI, Beta, ATR, IV). |
+| `finviz_screen_performance(sector, period, limit)` | Performance ranking by period. |
+| `finviz_screen_optionable_bullish(sector, limit)` | Optionable tickers with bullish technicals. |
+
+### 📋 Quote (by Ticker)
+
+| Tool | Description |
+|------|-------------|
+| `finviz_get_ticker_fundamentals(ticker)` | All fundamentals (P/E, dividend, market cap, etc.). |
+| `finviz_get_ticker_news(ticker, limit)` | Latest news with links. |
+| `finviz_get_ticker_insider(ticker, limit)` | Recent insider transactions. |
+| `finviz_get_ticker_ratings(ticker, limit)` | Analyst rating history. |
+| `finviz_get_ticker_peers(ticker)` | Peers (sector/industry). |
+| `finviz_get_ticker_full_info(ticker)` | All data in one call. |
+| `finviz_get_ticker_description(ticker)` | Company description. |
 
 ---
 
-## Workflow type : Watchlist Builder
+## Usage Examples
+
+### Claude Desktop
+
+Ask Claude naturally:
+```
+"Show insider activity for AAPL"
+"Find stocks with unusual insider buying"
+"What's the insider sentiment for tech stocks?"
+```
+
+### Python (e.g., in GitHub Actions)
+
+```python
+# Import directly from tools
+from tools.insider import finviz_get_market_insiders
+import json
+
+# Get recent insider buys
+result = finviz_get_market_insiders(option="latest buys", limit=10)
+data = json.loads(result)
+
+for record in data:
+    print(f"{record['Ticker']}: {record['Owner']} - {record['Relationship']}")
+```
+
+---
+
+## GitHub Actions Integration (option-finder)
+
+To integrate finviz-mcp into your scan pipeline:
+
+### 1. Start MCP in background (scan.yml)
+
+```yaml
+- name: Start finviz-mcp server
+  run: |
+    uvx --from git+https://github.com/xrichini/finviz-mcp.git finviz-mcp &
+    sleep 2  # Wait for server startup
+  env:
+    HOME: ${{ runner.temp }}
+```
+
+### 2. Call MCP tools from your Python script
+
+```python
+# scan_daemon.py
+import subprocess
+import json
+
+def get_insider_signal(ticker):
+    """Fetch insider data via MCP."""
+    # Option A: HTTP wrapper (if you wrap MCP in HTTP layer)
+    # Option B: Direct tool import (simpler)
+    from tools.insider import finviz_get_market_insiders
+    
+    result = finviz_get_market_insiders(option="latest buys", limit=50)
+    data = json.loads(result)
+    
+    # Filter by ticker
+    ticker_insiders = [r for r in data if r.get('Ticker') == ticker]
+    return {
+        'insider_activity': len(ticker_insiders),
+        'signal_strength': 'bullish' if len(ticker_insiders) > 2 else 'neutral'
+    }
+
+# In your scan loop:
+for symbol in symbols:
+    insider = get_insider_signal(symbol)
+    # Enrich your latest_scan.json with insider field
+```
+
+### 3. Commit updated JSON with insider data
+
+```yaml
+- name: Commit enriched scan with insider data
+  run: |
+    git add data/latest_scan.json
+    git commit -m "feat: add insider sentiment to scan ($(date +%s))"
+    git push origin main
+  if: always()
+```
+
+---
+
+## Development
+
+```bash
+# Install dependencies
+uv sync
+
+# Run tests
+uv run pytest tests/ -v
+
+# Format & lint
+uv run ruff check .
+uv run ruff format .
+
+# Debug MCP with MCP Inspector
+npx @modelcontextprotocol/inspector uv run python -m server
+```
+
+## Architecture
 
 ```
-1. finviz_get_sector_performance(period="Performance (Quarter)", top_n=3)
-   → Trouve les 3 secteurs leaders
+Claude Desktop / GitHub Actions
+         ↓
+  MCP Client (stdio/HTTP)
+         ↓
+  FastMCP Server (server.py)
+         ↓
+  Tool Handlers (tools/*.py)
+         ↓
+  finvizfinance Scraper
+         ↓
+  Finviz Website (data)
+```
 
-2. finviz_screen_new_highs(sector="Technology", min_market_cap="+Mid (over $2bln)")
-   + finviz_screen_bullish_technicals(sector="Technology")
-   → Top tickers bullish dans ces secteurs
+## Requirements
+
+- **Python 3.12+**
+- **uv** (Python package manager)
+- **finvizfinance** ≥ 1.3.0
+- **mcp** ≥ 1.27.0
+
+## License
+
+MIT
 
 3. [Pour chaque ticker retenu]
    finviz_get_ticker_news(ticker)

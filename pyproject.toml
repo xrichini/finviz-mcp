@@ -1,8 +1,14 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "finviz-mcp"
 version = "0.1.0"
-description = "Add your description here"
+description = "MCP server for Finviz insider trading, market sentiment, and screener data"
 readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Xavier Richini", email = "xrichini@example.com" }]
 requires-python = ">=3.12"
 dependencies = [
     "finvizfinance>=1.3.0",
@@ -11,3 +17,9 @@ dependencies = [
     "requests>=2.32.0",
     "tenacity>=9.0.0",
 ]
+
+[project.scripts]
+finviz-mcp = "server:main"
+
+[tool.setuptools]
+packages = ["tools"]
