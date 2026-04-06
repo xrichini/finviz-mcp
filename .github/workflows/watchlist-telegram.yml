@@ -1,0 +1,50 @@
+name: Weekly Watchlist to Telegram
+
+on:
+  schedule:
+    - cron: '0 20 * * 0' # Sunday 20:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  watchlist:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate and publish watchlist
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python scripts/watchlist_cli.py \
+            --output-dir watchlists \
+            --conviction-threshold 6 \
+            --max-tickers 8 \
+            --limit-per-screen 25 \
+            --telegram \
+            --fail-soft
+
+      - name: Upload watchlist artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: watchlist-${{ github.run_id }}
+          path: watchlists/
+          retention-days: 30
